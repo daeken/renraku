@@ -1,0 +1,6 @@
+using Nextem.Pipeline;
+using Nextem.String;
+
+namespace Renraku {
+	
+}

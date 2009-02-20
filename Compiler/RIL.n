@@ -1,0 +1,89 @@
+using Nextem.String;
+
+namespace Renraku.RIL {
+	public enum Op {
+		| @=
+		| @<=>
+		
+		| @+
+		| @-
+		| @*
+		| @/
+		| @**
+		| @%
+		
+		| Cmp
+		| @!
+		| @==
+		| @!=
+		| @<
+		| @>
+		| @<=
+		| @>=
+		
+		| @|
+		| @&
+		| @^
+		| @~
+	}
+	
+	public variant CILArg {
+		| Stack
+		| Local {
+			Index : uint
+		}
+		| Arg {
+			Num : uint
+		}
+		
+		public override ToString() : string {
+			match(this) {
+				| Stack => "Stack"
+				| Local(ind) => "local({0})" <- ind
+				| Arg(num) => "arg({0})" <- num
+			}
+		}
+	}
+	
+	public variant Inst [ArgT, LabelT] {
+		| Push {
+			Src : ArgT
+		}
+		| Pop {
+			Dest : ArgT
+		}
+		
+		| Unary {
+			Op : Op;
+			Dest : ArgT;
+			Src : ArgT
+		}
+		| Binary {
+			Op : Op;
+			Dest : ArgT;
+			Opers : ArgT * ArgT
+		}
+		
+		| Branch {
+			Comp : Op?;
+			Taken : LabelT;
+			NotTaken : LabelT
+		}
+		
+		public override ToString() : string {
+			match(this) {
+				| Push(arg) => "push({0})" <- arg
+				| Pop(arg)  => "{0} = pop()" <- arg
+				| Unary(op, dest, src) =>
+					"{0} = {1} {2}" <- (dest, op, src)
+				| Binary(op, dest, (a, b)) =>
+					"{0} = {1} {2} {3}" <- (dest, a, op, b)
+				| Branch(comp, taken, not) =>
+					if(comp == null)
+						"branch({0})" <- taken
+					else
+						"branch({0}, {1}, {2})" <- (comp, taken, not)
+			}
+		}
+	}
+}
