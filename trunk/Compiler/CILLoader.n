@@ -1,0 +1,14 @@
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Cil.OpCodes;
+
+using Nextem.String;
+using Nextem.Switch;
+
+namespace Renraku.CIL {
+	public module CILLoader {
+		public Load(fn : string) : void {
+			print fn
+		}
+	}
+}
