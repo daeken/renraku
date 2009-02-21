@@ -2,5 +2,8 @@ using Nextem.Pipeline;
 using Nextem.String;
 
 namespace Renraku {
-	
+	public module Main {
+		public Main() : void {
+		}
+	}
 }

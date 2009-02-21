@@ -1,6 +1,8 @@
+using System;
+
 using Nextem.String;
 
-namespace Renraku.RIL {
+namespace Renraku {
 	public enum Op {
 		| @=
 		| @<=>
@@ -84,6 +86,76 @@ namespace Renraku.RIL {
 					else
 						"branch({0}, {1}, {2})" <- (comp, taken, not)
 			}
+		}
+	}
+	
+	public variant RType {
+		| Native {
+			Type : Type
+		}
+		| Other {
+			Type : string
+		}
+		
+		public override ToString() : string {
+			match(this) {
+				| Native(typ) => typ.ToString()
+				| Other(typ) => typ
+			}
+		}
+	}
+	
+	public variant Assembly [MBodyT] {
+		| Top
+		| Namespace {
+			Name : String
+		}
+		| Class {
+			Name : String
+		}
+		| Field {
+			Name : String;
+			Type : RType
+		}
+		| Property {
+			Name : String;
+			Type : RType;
+			Getter : Method;
+			Setter : Method
+		}
+		| Method {
+			Name : String;
+			Type : list [RType] * RType;
+			Body : MBodyT
+		}
+		
+		public Children : list [Assembly [MBodyT]];
+		
+		public override ToString() : string {
+			def iterChild(list, accum : string = null) {
+				match(list) {
+					| null => ""
+					| [] => accum
+					| head :: tail =>
+						iterChild(
+							tail, 
+							if(accum == null)
+								head.ToString()
+							else
+								"{0}, {1}" <- (accum, head.ToString())
+						)
+				}
+			}
+			
+			"({0} ({1}))" <- (
+					match(this) {
+						| Top => "top"
+						| Namespace(name) => "ns:{0}" <- name
+						| Class(name) => "class:{0}" <- name
+						| _ => this.GetType().ToString()
+					},
+					iterChild(Children)
+				)
 		}
 	}
 }
