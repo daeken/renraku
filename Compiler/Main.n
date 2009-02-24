@@ -6,7 +6,8 @@ namespace Renraku {
 		public Main(args : array [string]) : void {
 			def pipe = 
 				pipeline(string) {
-					CILLoader.Load()
+					CILLoader.Load();
+					SSA.FromCIL()
 				}
 			print pipe(args[0])
 		}
