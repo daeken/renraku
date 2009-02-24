@@ -27,13 +27,13 @@ namespace Renraku {
 		
 		public override ToString() : string {
 			match(this) {
-				| Id(num) => "id({0})" <- num
+				| Id(num)        => "id({0})" <- num
 				| Phi(num, join) => "phi({0}, {1})" <- (num, join)
-				| Arg(num) => "arg({0})" <- num
-				| VInt(val) => "int({0})" <- val
-				| VUInt(val) => "uint({0})" <- val
-				| VShort(val) => "short({0})" <- val
-				| VUShort(val) => "ushort({0})" <- val
+				| Arg(num)       => "arg({0})" <- num
+				| VInt(val)      => "{0}" <- val
+				| VUInt(val)     => "{0}" <- val
+				| VShort(val)    => "{0}" <- val
+				| VUShort(val)   => "{0}" <- val
 			}
 		}
 	}
@@ -44,7 +44,7 @@ namespace Renraku {
 		public FromCIL(cil : Assembly [CILBody]) : Assembly [SSABody] {
 			def iterBody(body : CILBody, accum : SSABody = [], ssaId = 0, stack : list [int] = []) : SSABody {
 				def convVal(val : CILArg) : SSAArg {
-					| Arg(ind) => SSAArg.Id(ind :> int)
+					| Arg(ind) => SSAArg.Arg(ind)
 					| VInt(val) => SSAArg.VInt(val)
 					| VUInt(val) => SSAArg.VUInt(val)
 					| VShort(val) => SSAArg.VShort(val)
