@@ -3,7 +3,12 @@ using Nextem.String;
 
 namespace Renraku {
 	public module Main {
-		public Main() : void {
+		public Main(args : array [string]) : void {
+			def pipe = 
+				pipeline(string) {
+					CILLoader.Load()
+				}
+			print pipe(args[0])
 		}
 	}
 }
