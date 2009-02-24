@@ -1,5 +1,5 @@
 public module Test {
 	public Test(a : int) : int {
-		a * 5 + 1
+		(~a) * 5 + 1
 	}
 }
