@@ -6,6 +6,40 @@ using Nextem.String;
 using Nextem.Switch;
 
 namespace Renraku {
+	public variant CILArg {
+		| Stack
+		| Local {
+			Index : uint
+		}
+		| Arg {
+			Num : uint
+		}
+		| VInt {
+			Val : int
+		}
+		| VUInt {
+			Val : uint
+		}
+		| VShort {
+			Val : short
+		}
+		| VUShort {
+			Val : ushort
+		}
+		
+		public override ToString() : string {
+			match(this) {
+				| Stack => "stack"
+				| Local(ind) => "local({0})" <- ind
+				| Arg(num) => "arg({0})" <- num
+				| VInt(val) => "int({0})" <- val
+				| VUInt(val) => "uint({0})" <- val
+				| VShort(val) => "short({0})" <- val
+				| VUShort(val) => "ushort({0})" <- val
+			}
+		}
+	}
+	
 	type CILBody = list [int * Inst [CILArg, int]];
 	
 	public module CILLoader {

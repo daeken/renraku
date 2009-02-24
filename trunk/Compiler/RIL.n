@@ -4,9 +4,6 @@ using Nextem.String;
 
 namespace Renraku {
 	public enum Op {
-		| @=
-		| @<=>
-		
 		| @+
 		| @-
 		| @*
@@ -29,40 +26,6 @@ namespace Renraku {
 		| @~
 	}
 	
-	public variant CILArg {
-		| Stack
-		| Local {
-			Index : uint
-		}
-		| Arg {
-			Num : uint
-		}
-		| VInt {
-			Val : int
-		}
-		| VUInt {
-			Val : uint
-		}
-		| VShort {
-			Val : short
-		}
-		| VUShort {
-			Val : ushort
-		}
-		
-		public override ToString() : string {
-			match(this) {
-				| Stack => "stack"
-				| Local(ind) => "local({0})" <- ind
-				| Arg(num) => "arg({0})" <- num
-				| VInt(val) => "int({0})" <- val
-				| VUInt(val) => "uint({0})" <- val
-				| VShort(val) => "short({0})" <- val
-				| VUShort(val) => "ushort({0})" <- val
-			}
-		}
-	}
-	
 	public variant Inst [ArgT, LabelT] {
 		| Push {
 			Src : ArgT
@@ -71,6 +34,10 @@ namespace Renraku {
 			Dest : ArgT
 		}
 		
+		| Assign {
+			Dest : ArgT;
+			Src : ArgT
+		}
 		| Unary {
 			Op : Op;
 			Dest : ArgT;
@@ -93,6 +60,7 @@ namespace Renraku {
 		
 		public override ToString() : string {
 			match(this) {
+				| Assign(dest, src) => "{0} = {1}" <- (dest, src)
 				| Push(arg) => "push({0})" <- arg
 				| Pop(arg)  => "{0} = pop()" <- arg
 				| Unary(op, dest, src) =>
@@ -111,10 +79,6 @@ namespace Renraku {
 	
 	public variant Assembly [MBodyT] {
 		| Top {
-			Children_ : list [Assembly [MBodyT]]
-		}
-		| Namespace {
-			Name : string;
 			Children_ : list [Assembly [MBodyT]]
 		}
 		| Class {
@@ -147,7 +111,6 @@ namespace Renraku {
 			get {
 				match(this) {
 					| Top as obj       => obj.Children_
-					| Namespace as obj => obj.Children_
 					| Class as obj     => obj.Children_
 					| Field as obj     => obj.Children_
 					| Property as obj  => obj.Children_
@@ -179,7 +142,6 @@ namespace Renraku {
 					"({0} ({1}))" <- (
 							match(this) {
 								| Top => "top"
-								| Namespace(name, _) => "ns:{0}" <- name
 								| Class(name, _) => "class:{0}" <- name
 								| Method(name, _, body, _) => "method:{0} {1}" <- (name, body)
 								| _ => this.GetType().ToString()

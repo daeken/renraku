@@ -1,0 +1,102 @@
+using Nextem.String;
+
+namespace Renraku {
+	public variant SSAArg {
+		| Id {
+			Num : int
+		}
+		| Phi {
+			Num : int;
+			Join : list [int]
+		}
+		| Arg {
+			Num : uint
+		}
+		| VInt {
+			Val : int
+		}
+		| VUInt {
+			Val : uint
+		}
+		| VShort {
+			Val : short
+		}
+		| VUShort {
+			Val : ushort
+		}
+		
+		public override ToString() : string {
+			match(this) {
+				| Id(num) => "id({0})" <- num
+				| Phi(num, join) => "phi({0}, {1})" <- (num, join)
+				| Arg(num) => "arg({0})" <- num
+				| VInt(val) => "int({0})" <- val
+				| VUInt(val) => "uint({0})" <- val
+				| VShort(val) => "short({0})" <- val
+				| VUShort(val) => "ushort({0})" <- val
+			}
+		}
+	}
+	
+	type SSABody = list [int * Inst [SSAArg, int]];
+	
+	public module SSA {
+		public FromCIL(cil : Assembly [CILBody]) : Assembly [SSABody] {
+			def iterBody(body : CILBody, accum : SSABody = [], ssaId = 0, stack : list [int] = []) : SSABody {
+				def convVal(val : CILArg) : SSAArg {
+					| Arg(ind) => SSAArg.Id(ind :> int)
+					| VInt(val) => SSAArg.VInt(val)
+					| VUInt(val) => SSAArg.VUInt(val)
+					| VShort(val) => SSAArg.VShort(val)
+					| VUShort(val) => SSAArg.VUShort(val)
+					| val => throw System.Exception("Can't convert {0}" <- val)
+				}
+				
+				match(body) {
+					| [] => accum.Reverse()
+					| (offset, inst) :: tail =>
+						def (elem, ssaId, stack) =
+							match((inst, stack)) {
+								| (Push(src), _) =>
+									(Inst.Assign(SSAArg.Id(ssaId), convVal(src)), ssaId+1, ssaId :: stack)
+								| (Binary(op, ovf, _, _), right :: left :: stack) =>
+									(Inst.Binary(op, ovf, SSAArg.Id(ssaId), (SSAArg.Id(left), SSAArg.Id(right))), ssaId+1, ssaId :: stack)
+								| _ =>
+									print inst;
+									(null, ssaId, stack)
+							}
+						
+						iterBody(tail, (offset, elem) :: accum, ssaId, stack)
+				}
+			}
+			
+			def iter(tail : list [Assembly [CILBody]], accum : list [Assembly [SSABody]] = []) : list [Assembly [SSABody]] {
+				match(tail) {
+					| [] => accum.Reverse()
+					| head :: tail =>
+						iter(
+							tail,
+							match(head) {
+								| Class(name, children) =>
+									Assembly.Class(name, iter(children))
+								| Method(name, typ, body, _) =>
+									Assembly.Method(name, typ, iterBody(body), null)
+								| _ => null
+							} :: accum
+						)
+				}
+			}
+			
+			match(cil) {
+				| Top(list) =>
+					Assembly.Top(
+						iter(list)
+					)
+				| cil =>
+					throw System.Exception(
+						"Invalid type to SSA.FromCIL. {0}" <- cil.GetType()
+					)
+			}
+		}
+	}
+}
