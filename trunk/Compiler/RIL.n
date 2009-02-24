@@ -37,12 +37,28 @@ namespace Renraku {
 		| Arg {
 			Num : uint
 		}
+		| VInt {
+			Val : int
+		}
+		| VUInt {
+			Val : uint
+		}
+		| VShort {
+			Val : short
+		}
+		| VUShort {
+			Val : ushort
+		}
 		
 		public override ToString() : string {
 			match(this) {
-				| Stack => "Stack"
+				| Stack => "stack"
 				| Local(ind) => "local({0})" <- ind
 				| Arg(num) => "arg({0})" <- num
+				| VInt(val) => "int({0})" <- val
+				| VUInt(val) => "uint({0})" <- val
+				| VShort(val) => "short({0})" <- val
+				| VUShort(val) => "ushort({0})" <- val
 			}
 		}
 	}
@@ -62,6 +78,7 @@ namespace Renraku {
 		}
 		| Binary {
 			Op : Op;
+			Ovf : bool;
 			Dest : ArgT;
 			Opers : ArgT * ArgT
 		}
@@ -72,64 +89,73 @@ namespace Renraku {
 			NotTaken : LabelT
 		}
 		
+		| Return
+		
 		public override ToString() : string {
 			match(this) {
 				| Push(arg) => "push({0})" <- arg
 				| Pop(arg)  => "{0} = pop()" <- arg
 				| Unary(op, dest, src) =>
 					"{0} = {1} {2}" <- (dest, op, src)
-				| Binary(op, dest, (a, b)) =>
-					"{0} = {1} {2} {3}" <- (dest, a, op, b)
+				| Binary(op, ovf, dest, (a, b)) =>
+					"{0} = {1} {2}{3} {4}" <- (dest, a, op, if(ovf) ".ovf" else "", b)
 				| Branch(comp, taken, not) =>
 					if(comp == null)
 						"branch({0})" <- taken
 					else
 						"branch({0}, {1}, {2})" <- (comp, taken, not)
-			}
-		}
-	}
-	
-	public variant RType {
-		| Native {
-			Type : Type
-		}
-		| Other {
-			Type : string
-		}
-		
-		public override ToString() : string {
-			match(this) {
-				| Native(typ) => typ.ToString()
-				| Other(typ) => typ
+				| Return => "return"
 			}
 		}
 	}
 	
 	public variant Assembly [MBodyT] {
-		| Top
+		| Top {
+			Children_ : list [Assembly [MBodyT]]
+		}
 		| Namespace {
-			Name : String
+			Name : string;
+			Children_ : list [Assembly [MBodyT]]
 		}
 		| Class {
-			Name : String
+			Name : string;
+			Children_ : list [Assembly [MBodyT]]
 		}
 		| Field {
-			Name : String;
-			Type : RType
+			Name : string;
+			Type : string;
+			Children_ : list [Assembly [MBodyT]]
 		}
 		| Property {
-			Name : String;
-			Type : RType;
+			Name : string;
+			Type : string;
 			Getter : Method;
-			Setter : Method
+			Setter : Method;
+			Children_ : list [Assembly [MBodyT]]
 		}
 		| Method {
-			Name : String;
-			Type : list [RType] * RType;
-			Body : MBodyT
+			Name : string;
+			Type : list [string] * string;
+			Body : MBodyT;
+			Children_ : list [Assembly [MBodyT]]
+		}
+		| TypeRef {
+			Name : string
 		}
 		
-		public Children : list [Assembly [MBodyT]];
+		public Children : list [Assembly [MBodyT]] {
+			get {
+				match(this) {
+					| Top as obj       => obj.Children_
+					| Namespace as obj => obj.Children_
+					| Class as obj     => obj.Children_
+					| Field as obj     => obj.Children_
+					| Property as obj  => obj.Children_
+					| Method as obj    => obj.Children_
+					| _ => null
+				}
+			}
+		}
 		
 		public override ToString() : string {
 			def iterChild(list, accum : string = null) {
@@ -147,15 +173,20 @@ namespace Renraku {
 				}
 			}
 			
-			"({0} ({1}))" <- (
-					match(this) {
-						| Top => "top"
-						| Namespace(name) => "ns:{0}" <- name
-						| Class(name) => "class:{0}" <- name
-						| _ => this.GetType().ToString()
-					},
-					iterChild(Children)
-				)
+			match(this) {
+				| TypeRef(name) => "typeref:{0}" <- name
+				| _ => 
+					"({0} ({1}))" <- (
+							match(this) {
+								| Top => "top"
+								| Namespace(name, _) => "ns:{0}" <- name
+								| Class(name, _) => "class:{0}" <- name
+								| Method(name, _, body, _) => "method:{0} {1}" <- (name, body)
+								| _ => this.GetType().ToString()
+							},
+							iterChild(Children)
+						)
+			}
 		}
 	}
 }

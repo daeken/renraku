@@ -1,14 +1,76 @@
-//using Mono.Cecil;
-//using Mono.Cecil.Cil;
-//using Mono.Cecil.Cil.OpCodes;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using Mono.Cecil.Cil.OpCodes;
 
 using Nextem.String;
 using Nextem.Switch;
 
 namespace Renraku {
+	type CILBody = list [int * Inst [CILArg, int]];
+	
 	public module CILLoader {
-		public Load(fn : string) : void {
-			print fn
+		public Load(fn : string) : Assembly [CILBody] {
+			def ParseBody(insts, off, accum : CILBody = []) {
+				if(off == -1) accum
+				else {
+					def inst = insts[off];
+					if(inst.OpCode == Nop)
+						ParseBody(insts, off-1, accum)
+					else
+						ParseBody(
+							insts,
+							off-1,
+							(
+								inst.Offset, 
+								switch(inst.OpCode) {
+									| Ldarg_0 => Inst.Push(CILArg.Arg(0))
+									
+									| Ldc_I4_0 => Inst.Push(CILArg.VInt(0))
+									| Ldc_I4_1 => Inst.Push(CILArg.VInt(1))
+									| Ldc_I4_2 => Inst.Push(CILArg.VInt(2))
+									| Ldc_I4_3 => Inst.Push(CILArg.VInt(3))
+									| Ldc_I4_4 => Inst.Push(CILArg.VInt(4))
+									| Ldc_I4_5 => Inst.Push(CILArg.VInt(5))
+									| Ldc_I4_6 => Inst.Push(CILArg.VInt(6))
+									| Ldc_I4_7 => Inst.Push(CILArg.VInt(7))
+									| Ldc_I4_8 => Inst.Push(CILArg.VInt(8))
+									
+									| Add_Ovf => Inst.Binary(Op.@+, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									| Sub_Ovf => Inst.Binary(Op.@-, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									| Mul_Ovf => Inst.Binary(Op.@*, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									
+									| Ret => Inst.Return()
+									
+									| _ =>
+										print inst.OpCode;
+										null
+								}
+							) :: accum
+						)
+				}
+			}
+			
+			def asm = AssemblyFactory.GetAssembly(fn);
+			
+			mutable types = [];
+			
+			foreach(mod :> ModuleDefinition in asm.Modules)
+				foreach(typ :> TypeDefinition in mod.Types) {
+					unless(typ.Name == "<Module>") {
+						mutable members = [];
+						foreach(meth :> MethodDefinition in typ.Methods)
+							members ::=
+								Assembly.Method.[CILBody](
+									meth.Name,
+									([], meth.ReturnType.ReturnType.Name),
+									ParseBody(meth.Body.Instructions, meth.Body.Instructions.Count-1),
+									[]
+								);
+						types ::= Assembly.Class(typ.Name, members)
+					}
+				}
+			
+			Assembly.Top(types)
 		}
 	}
 }
