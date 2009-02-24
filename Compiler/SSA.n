@@ -59,6 +59,8 @@ namespace Renraku {
 							match((inst, stack)) {
 								| (Push(src), _) =>
 									(Inst.Assign(SSAArg.Id(ssaId), convVal(src)), ssaId+1, ssaId :: stack)
+								| (Unary(op, _, _), src :: stack) =>
+									(Inst.Unary(op, SSAArg.Id(ssaId), SSAArg.Id(src)), ssaId+1, ssaId :: stack)
 								| (Binary(op, ovf, _, _), right :: left :: stack) =>
 									(Inst.Binary(op, ovf, SSAArg.Id(ssaId), (SSAArg.Id(left), SSAArg.Id(right))), ssaId+1, ssaId :: stack)
 								| _ =>

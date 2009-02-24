@@ -59,19 +59,21 @@ namespace Renraku {
 								switch(inst.OpCode) {
 									| Ldarg_0 => Inst.Push(CILArg.Arg(0))
 									
-									| Ldc_I4_0 => Inst.Push(CILArg.VInt(0))
-									| Ldc_I4_1 => Inst.Push(CILArg.VInt(1))
-									| Ldc_I4_2 => Inst.Push(CILArg.VInt(2))
-									| Ldc_I4_3 => Inst.Push(CILArg.VInt(3))
-									| Ldc_I4_4 => Inst.Push(CILArg.VInt(4))
-									| Ldc_I4_5 => Inst.Push(CILArg.VInt(5))
-									| Ldc_I4_6 => Inst.Push(CILArg.VInt(6))
-									| Ldc_I4_7 => Inst.Push(CILArg.VInt(7))
-									| Ldc_I4_8 => Inst.Push(CILArg.VInt(8))
+									| Ldc_I4_M1 => Inst.Push(CILArg.VInt(-1))
+									| Ldc_I4_0  => Inst.Push(CILArg.VInt(0))
+									| Ldc_I4_1  => Inst.Push(CILArg.VInt(1))
+									| Ldc_I4_2  => Inst.Push(CILArg.VInt(2))
+									| Ldc_I4_3  => Inst.Push(CILArg.VInt(3))
+									| Ldc_I4_4  => Inst.Push(CILArg.VInt(4))
+									| Ldc_I4_5  => Inst.Push(CILArg.VInt(5))
+									| Ldc_I4_6  => Inst.Push(CILArg.VInt(6))
+									| Ldc_I4_7  => Inst.Push(CILArg.VInt(7))
+									| Ldc_I4_8  => Inst.Push(CILArg.VInt(8))
 									
 									| Add_Ovf => Inst.Binary(Op.@+, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
 									| Sub_Ovf => Inst.Binary(Op.@-, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
 									| Mul_Ovf => Inst.Binary(Op.@*, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									| Not => Inst.Unary(Op.@~, CILArg.Stack(), CILArg.Stack())
 									
 									| Ret => Inst.Return()
 									
