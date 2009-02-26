@@ -4,6 +4,8 @@ using Nextem.String;
 
 namespace Renraku {
 	public enum Op {
+		| Nil
+		
 		| @+
 		| @-
 		| @*
@@ -51,12 +53,14 @@ namespace Renraku {
 		}
 		
 		| Branch {
-			Comp : Op?;
+			Comp : Op * ArgT * ArgT;
 			Taken : LabelT;
 			NotTaken : LabelT
 		}
 		
-		| Return
+		| Return {
+			Val : ArgT
+		}
 		
 		public override ToString() : string {
 			match(this) {
@@ -67,12 +71,12 @@ namespace Renraku {
 					"{0} = {1} {2}" <- (dest, op, src)
 				| Binary(op, ovf, dest, (a, b)) =>
 					"{0} = {1} {2}{3} {4}" <- (dest, a, op, if(ovf) ".ovf" else "", b)
-				| Branch(comp, taken, not) =>
-					if(comp == null)
+				| Branch((op, _, _) as comp, taken, not) =>
+					if(op == Op.Nil)
 						"branch({0})" <- taken
 					else
 						"branch({0}, {1}, {2})" <- (comp, taken, not)
-				| Return => "return"
+				| Return(val) => "return({0})" <- val
 			}
 		}
 	}
@@ -87,21 +91,18 @@ namespace Renraku {
 		}
 		| Field {
 			Name : string;
-			Type : string;
-			Children_ : list [Assembly [MBodyT]]
+			Type : string
 		}
 		| Property {
 			Name : string;
 			Type : string;
-			Getter : Method;
-			Setter : Method;
-			Children_ : list [Assembly [MBodyT]]
+			Getter : MBodyT;
+			Setter : MBodyT
 		}
 		| Method {
 			Name : string;
 			Type : list [string] * string;
-			Body : MBodyT;
-			Children_ : list [Assembly [MBodyT]]
+			Body : MBodyT
 		}
 		| TypeRef {
 			Name : string
@@ -112,9 +113,6 @@ namespace Renraku {
 				match(this) {
 					| Top as obj       => obj.Children_
 					| Class as obj     => obj.Children_
-					| Field as obj     => obj.Children_
-					| Property as obj  => obj.Children_
-					| Method as obj    => obj.Children_
 					| _ => null
 				}
 			}
@@ -139,16 +137,39 @@ namespace Renraku {
 			match(this) {
 				| TypeRef(name) => "typeref:{0}" <- name
 				| _ => 
-					"({0} ({1}))" <- (
-							match(this) {
-								| Top => "top"
-								| Class(name, _) => "class:{0}" <- name
-								| Method(name, _, body, _) => "method:{0} {1}" <- (name, body)
-								| _ => this.GetType().ToString()
-							},
-							iterChild(Children)
-						)
+					def str = 
+						match(this) {
+							| Top => "top"
+							| Class(name, _) => "class:{0}" <- name
+							| Method(name, _, body) => "method:{0} {1}" <- (name, body)
+							| _ => this.GetType().ToString()
+						}
+					if(Children == null)
+						"({0})" <- str
+					else
+						"({0} ({1}))" <- (
+								str, 
+								iterChild(Children)
+							)
 			}
 		}
+		
+		public MapMethods [DBodyT](func : MBodyT -> DBodyT) : Assembly [DBodyT] {
+			def map = _.Map(_.MapMethods(func));
+			match(this) {
+				| Top(children) => Top(map(children))
+				| Class(name, children) => Class(name, map(children))
+				| Field(name, typ) => Field(name, typ)
+				| Property(name, typ, getter, setter) => Property(name, typ, func(getter), func(setter))
+				| Method(name, typ, body) => Method(name, typ, func(body))
+				| TypeRef(typ) => TypeRef(typ)
+			}
+		}
+	}
+	
+	[Record]
+	public class GraphBody [ArgT] {
+		public Connections : list [GraphBody [ArgT]];
+		public Insts : list [Inst [ArgT, GraphBody [ArgT]]];
 	}
 }
