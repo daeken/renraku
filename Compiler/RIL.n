@@ -54,8 +54,8 @@ namespace Renraku {
 		
 		| Branch {
 			Comp : Op * ArgT * ArgT;
-			Taken : LabelT;
-			NotTaken : LabelT
+			mutable Taken : LabelT;
+			mutable NotTaken : LabelT
 		}
 		
 		| Return {
@@ -169,7 +169,6 @@ namespace Renraku {
 	
 	[Record]
 	public class GraphBody [ArgT] {
-		public Connections : list [GraphBody [ArgT]];
 		public Insts : list [Inst [ArgT, GraphBody [ArgT]]];
 	}
 }

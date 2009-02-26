@@ -1,3 +1,4 @@
+using Nemerle.Collections;
 using Nextem.String;
 
 namespace Renraku {
@@ -5,7 +6,79 @@ namespace Renraku {
 	
 	public module CILGraph {
 		public FromFlat(cil : Assembly [CILBody]) : Assembly [CILGraphBody] {
-			null
+			cil.MapMethods(Graphize)
+		}
+		
+		Graphize(cil : CILBody) : CILGraphBody {
+			def findRefs(body : CILBody, accum = []) {
+				match(body) {
+					| [] => accum
+					| (_, inst) :: tail =>
+						findRefs(
+							tail, 
+							match(inst) {
+								| Branch((op, _, _), taken, not) =>
+									if(op == Op.Nil) taken :: accum
+									else not :: taken :: accum
+								| _ => accum
+							}
+						)
+				}
+			}
+			def refs = findRefs(cil).Sort((a, b) => a.CompareTo(b));
+			
+			def addImplicitBranch(cur : list [Inst [CILArg, int]], pos) {
+				match(cur) {
+					| Branch :: _ => cur
+					| _ => Inst.Branch((Op.Nil, null, null), pos, 0) :: cur
+				}
+			}
+			
+			def nodes = Hashtable();
+			def splitNodes(body : CILBody, refs, start = 0, cur = []) {
+				match(body) {
+					| [] =>
+						when(!cur.IsEmpty) nodes[start] = cur.Reverse()
+					| (pos, _) :: _ when !refs.IsEmpty && pos >= refs.Head =>
+						def cur = addImplicitBranch(cur, pos);
+						nodes[start] = cur;
+						splitNodes(body, refs.Tail, refs.Head)
+					| (_, inst) :: tail =>
+						splitNodes(tail, refs, start, inst :: cur)
+				}
+			}
+			splitNodes(cil, refs);
+			
+			def mapNodes(key : int, value : list [Inst [CILArg, int]]) {
+				def mapInsts(inst : Inst [CILArg, int]) : Inst [CILArg, CILGraphBody] {
+					| Push(src) => Inst.Push(src)
+					| Pop(dest) => Inst.Pop(dest)
+					| Assign(dest, src) => Inst.Assign(dest, src)
+					| Unary(op, dest, src) => Inst.Unary(op, dest, src)
+					| Binary(op, ovf, dest, opers) => Inst.Binary(op, ovf, dest, opers)
+					| Branch(cond, _, _) => Inst.Branch(cond, null, null)
+					| Return(val) => Inst.Return(val)
+				}
+				(key, CILGraphBody(value.Map(x => mapInsts(x))))
+			}
+			def graphNodes = nodes.Map(mapNodes);
+			
+			def remapNodes(key : int, value : CILGraphBody) {
+				match(value.Insts) {
+					| Branch as branch :: _ =>
+						match(nodes[key]) {
+							| Branch((op, _, _), taken, not) :: _ =>
+								branch.Taken = graphNodes[taken];
+								unless(op == Op.Nil)
+									branch.NotTaken = graphNodes[not]
+							| _ => ()
+						}
+					| _ => ()
+				}
+				(key, value)
+			}
+			def finalNodes = graphNodes.Map(remapNodes);
+			finalNodes[0]
 		}
 	}
 }
