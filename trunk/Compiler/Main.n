@@ -7,8 +7,8 @@ namespace Renraku {
 			def pipe = 
 				pipeline(string) {
 					CILLoader.Load();
-					//CILGraph.FromFlat();
-					SSA.FromCIL()
+					CILGraph.FromFlat();
+					//SSA.FromCIL()
 				}
 			print pipe(args[0])
 		}
