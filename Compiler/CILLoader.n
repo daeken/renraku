@@ -40,7 +40,7 @@ namespace Renraku {
 		}
 	}
 	
-	type CILBody = list [int * Inst [CILArg, int]];
+	public type CILBody = list [int * Inst [CILArg, int]];
 	
 	public module CILLoader {
 		public Load(fn : string) : Assembly [CILBody] {
@@ -59,6 +59,7 @@ namespace Renraku {
 								switch(inst.OpCode) {
 									| Ldarg_0 => Inst.Push(CILArg.Arg(0))
 									
+									| Ldc_I4_S  => Inst.Push(CILArg.VInt((inst.Operand :> sbyte) :> int))
 									| Ldc_I4_M1 => Inst.Push(CILArg.VInt(-1))
 									| Ldc_I4_0  => Inst.Push(CILArg.VInt(0))
 									| Ldc_I4_1  => Inst.Push(CILArg.VInt(1))
@@ -75,10 +76,13 @@ namespace Renraku {
 									| Mul_Ovf => Inst.Binary(Op.@*, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
 									| Not => Inst.Unary(Op.@~, CILArg.Stack(), CILArg.Stack())
 									
-									| Ret => Inst.Return()
+									| Br  => Inst.Branch((Op.Nil, CILArg.Stack(), null), (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
+									| Ble => Inst.Branch((Op.@>=, CILArg.Stack(), CILArg.Stack()), (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
+									
+									| Ret => Inst.Return(CILArg.Stack())
 									
 									| _ =>
-										print inst.OpCode;
+										print "Unhandled opcode: {0} {1}" <- (inst.OpCode, inst.Operand);
 										null
 								}
 							) :: accum
@@ -99,8 +103,7 @@ namespace Renraku {
 								Assembly.Method.[CILBody](
 									meth.Name,
 									([], meth.ReturnType.ReturnType.Name),
-									ParseBody(meth.Body.Instructions, meth.Body.Instructions.Count-1),
-									[]
+									ParseBody(meth.Body.Instructions, meth.Body.Instructions.Count-1)
 								);
 						types ::= Assembly.Class(typ.Name, members)
 					}

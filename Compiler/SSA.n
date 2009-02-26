@@ -38,7 +38,7 @@ namespace Renraku {
 		}
 	}
 	
-	type SSABody = list [int * Inst [SSAArg, int]];
+	public type SSABody = list [int * Inst [SSAArg, int]];
 	
 	public module SSA {
 		public FromCIL(cil : Assembly [CILBody]) : Assembly [SSABody] {
@@ -72,33 +72,7 @@ namespace Renraku {
 				}
 			}
 			
-			def iter(tail : list [Assembly [CILBody]], accum : list [Assembly [SSABody]] = []) : list [Assembly [SSABody]] {
-				match(tail) {
-					| [] => accum.Reverse()
-					| head :: tail =>
-						iter(
-							tail,
-							match(head) {
-								| Class(name, children) =>
-									Assembly.Class(name, iter(children))
-								| Method(name, typ, body, _) =>
-									Assembly.Method(name, typ, iterBody(body), null)
-								| _ => null
-							} :: accum
-						)
-				}
-			}
-			
-			match(cil) {
-				| Top(list) =>
-					Assembly.Top(
-						iter(list)
-					)
-				| cil =>
-					throw System.Exception(
-						"Invalid type to SSA.FromCIL. {0}" <- cil.GetType()
-					)
-			}
+			cil.MapMethods(x => iterBody(x))
 		}
 	}
 }
