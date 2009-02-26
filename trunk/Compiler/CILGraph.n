@@ -10,6 +10,7 @@ namespace Renraku {
 		}
 		
 		Graphize(cil : CILBody) : CILGraphBody {
+			// Iterate over the body and find branches, making a list of block refs
 			def findRefs(body : CILBody, accum = []) {
 				match(body) {
 					| [] => accum
@@ -27,15 +28,22 @@ namespace Renraku {
 			}
 			def refs = findRefs(cil).Sort((a, b) => a.CompareTo(b));
 			
-			def addImplicitBranch(cur : list [Inst [CILArg, int]], pos) {
-				match(cur) {
-					| Branch :: _ => cur
-					| _ => Inst.Branch((Op.Nil, null, null), pos, 0) :: cur
-				}
-			}
-			
+			// Build a hashtable of nodes, walking over the body.
+			// It recurses, popping references off the list and keeping the
+			// start position for the block (the key), while accumulating instructions
+			// in cur.  Once the position is >= the next ref, it means the end of the
+			// block.  addImplicitBranch creates an unconditional branch to the next
+			// block if the current block doesn't end with a branch, to keep the graph
+			// flowing properly.
 			def nodes = Hashtable();
 			def splitNodes(body : CILBody, refs, start = 0, cur = []) {
+				def addImplicitBranch(cur : list [Inst [CILArg, int]], pos) {
+					match(cur) {
+						| Branch :: _ => cur
+						| _ => Inst.Branch((Op.Nil, null, null), pos, 0) :: cur
+					}
+				}
+				
 				match(body) {
 					| [] =>
 						when(!cur.IsEmpty) nodes[start] = cur.Reverse()
@@ -49,6 +57,11 @@ namespace Renraku {
 			}
 			splitNodes(cil, refs);
 			
+			// Iterate over each node and each instruction in the node and make
+			// CILGraphBody instructions from the original CILBody instructions.
+			// This needs to be rolled into a map function in Inst itself.
+			// Branch destinations are nulled out so that the next pass can add the
+			// proper references.
 			def mapNodes(key : int, value : list [Inst [CILArg, int]]) {
 				def mapInsts(inst : Inst [CILArg, int]) : Inst [CILArg, CILGraphBody] {
 					| Push(src) => Inst.Push(src)
@@ -63,6 +76,10 @@ namespace Renraku {
 			}
 			def graphNodes = nodes.Map(mapNodes);
 			
+			// Walk over the nodes and fix their branch references to point to the
+			// proper objects.  It refers to the original 'nodes' hashtable to get
+			// the block start addresses and uses them as the keys to the graphNodes
+			// table.
 			def remapNodes(key : int, value : CILGraphBody) {
 				match(value.Insts) {
 					| Branch as branch :: _ =>
@@ -78,6 +95,7 @@ namespace Renraku {
 				(key, value)
 			}
 			def finalNodes = graphNodes.Map(remapNodes);
+			// Hand back the first block of the method.  The rest will flow.
 			finalNodes[0]
 		}
 	}
