@@ -5,14 +5,14 @@ using Mono.Cecil.Cil.OpCodes;
 using Nextem.String;
 using Nextem.Switch;
 
-namespace Renraku {
+namespace Renraku.Compiler {
 	public variant CILArg {
 		| Stack
 		| Local {
 			Index : uint
 		}
 		| Arg {
-			Num : uint
+			Num : int
 		}
 		| VInt {
 			Val : int

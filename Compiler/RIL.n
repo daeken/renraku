@@ -2,7 +2,7 @@ using System;
 
 using Nextem.String;
 
-namespace Renraku {
+namespace Renraku.Compiler {
 	public enum Op {
 		| Nil
 		

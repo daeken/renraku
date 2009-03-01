@@ -1,16 +1,28 @@
+using System;
+
 using Nextem.Pipeline;
 using Nextem.String;
 
-namespace Renraku {
+namespace Renraku.Compiler {
 	public module Main {
 		public Main(args : array [string]) : void {
-			def pipe = 
-				pipeline(string) {
-					CILLoader.Load();
-					CILGraph.FromFlat();
-					//SSA.FromCIL()
+			def (arch, off) = 
+				match(args.Length) {
+					| 2 => ("x86", 0)
+					| 3 => (args[0], 1)
+					| _ => throw Exception("Compiler.exe [architecture] <input> <output>")
 				}
-			print pipe(args[0])
+			def pipe = 
+				match(arch.ToLower()) {
+					| "x86" =>
+						pipeline(string) {
+							CILLoader.Load();
+							CILGraph.FromCIL();
+							//SSA.FromCILGraph()
+						}
+					| arch => throw Exception("Unknown architecture {0}" <- arch)
+				}
+			print pipe(args[off])
 		}
 	}
 }
