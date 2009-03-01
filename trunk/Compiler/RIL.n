@@ -54,6 +54,7 @@ namespace Renraku.Compiler {
 		
 		| Branch {
 			Comp : Op * ArgT * ArgT;
+			Unsigned : bool;
 			mutable Taken : LabelT;
 			mutable NotTaken : LabelT
 		}
@@ -71,7 +72,7 @@ namespace Renraku.Compiler {
 					"{0} = {1} {2}" <- (dest, op, src)
 				| Binary(op, ovf, dest, (a, b)) =>
 					"{0} = {1} {2}{3} {4}" <- (dest, a, op, if(ovf) ".ovf" else "", b)
-				| Branch((op, _, _) as comp, taken, not) =>
+				| Branch((op, _, _) as comp, _, taken, not) =>
 					if(op == Op.Nil)
 						"branch({0})" <- taken
 					else

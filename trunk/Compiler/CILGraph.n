@@ -19,7 +19,7 @@ namespace Renraku.Compiler {
 						findRefs(
 							tail, 
 							match(inst) {
-								| Branch((op, _, _), taken, not) =>
+								| Branch((op, _, _), _, taken, not) =>
 									if(op == Op.Nil) taken :: accum
 									else not :: taken :: accum
 								| _ => accum
@@ -41,7 +41,7 @@ namespace Renraku.Compiler {
 				def addImplicitBranch(cur : list [Inst [CILArg, int]], pos) {
 					match(cur) {
 						| Branch :: _ => cur
-						| _ => Inst.Branch((Op.Nil, null, null), pos, 0) :: cur
+						| _ => Inst.Branch((Op.Nil, null, null), false, pos, 0) :: cur 
 					}
 				}
 				
@@ -70,7 +70,7 @@ namespace Renraku.Compiler {
 					| Assign(dest, src) => Inst.Assign(dest, src)
 					| Unary(op, dest, src) => Inst.Unary(op, dest, src)
 					| Binary(op, ovf, dest, opers) => Inst.Binary(op, ovf, dest, opers)
-					| Branch(cond, _, _) => Inst.Branch(cond, null, null)
+					| Branch(cond, unsigned, _, _) => Inst.Branch(cond, unsigned, null, null)
 					| Return(val) => Inst.Return(val)
 				}
 				(key, CILGraphBody(value.Map(x => mapInsts(x))))
@@ -85,7 +85,7 @@ namespace Renraku.Compiler {
 				match(value.Insts) {
 					| Branch as branch :: _ =>
 						match(nodes[key]) {
-							| Branch((op, _, _), taken, not) :: _ =>
+							| Branch((op, _, _), _, taken, not) :: _ =>
 								branch.Taken = graphNodes[taken];
 								unless(op == Op.Nil)
 									branch.NotTaken = graphNodes[not]
