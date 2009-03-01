@@ -1,0 +1,10 @@
+using Renraku;
+
+public module Test {
+	public Main() : void {
+		def video = pointer.[ushort](0xB8000);
+		def text = array ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '\0'];
+		for(mutable i = 0; text[i] != 0 : char; ++i)
+			video[i] = 0x0F00 | (text[i] :> ushort)
+	}
+}

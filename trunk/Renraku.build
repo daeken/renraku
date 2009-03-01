@@ -27,7 +27,8 @@
 		</ncc>
 	</target>
 	
-	<target name="Test" description="Build the test binary" depends="Compiler">
+	<target name="Test" description="Build the test kernel" depends="Compiler">
+		<!--
 		<ncc target="dll" output="Obj/Test.dll" debug="${debug}">
 			<sources>
 				<include name="Test/*.n" />
@@ -36,6 +37,7 @@
 			</references>
 			<arg line="-r ../Nextem/Obj/Nextem.dll -m ../Nextem/Obj/Nextem.Macros.dll" />
 		</ncc>
+		-->
 	</target>
 	
 	<target name="Build" description="Build Renraku" depends="Compiler, Test" />

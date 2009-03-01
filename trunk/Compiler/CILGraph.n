@@ -1,11 +1,12 @@
 using Nemerle.Collections;
+
 using Nextem.String;
 
-namespace Renraku {
+namespace Renraku.Compiler {
 	public type CILGraphBody = GraphBody [CILArg];
 	
 	public module CILGraph {
-		public FromFlat(cil : Assembly [CILBody]) : Assembly [CILGraphBody] {
+		public FromCIL(cil : Assembly [CILBody]) : Assembly [CILGraphBody] {
 			cil.MapMethods(Graphize)
 		}
 		
