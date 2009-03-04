@@ -1,0 +1,22 @@
+using System;
+
+namespace Renraku.Core {
+	public struct Pointer [T] {
+		public Value : T {
+			get { 0 :> T }
+			set { _ = value }
+		}
+		public Addr : UIntPtr {
+			get { 0U :> UIntPtr }
+			set { _ = value }
+		}
+		public Item [_ : int] : T {
+			get { Value }
+			set { _ = value }
+		}
+		
+		public this(_ : uint) {}
+		public this(_ : ulong) {}
+		public this(_ : UIntPtr) {}
+	}
+}

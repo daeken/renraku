@@ -35,8 +35,38 @@ namespace Renraku.Compiler {
 		| Pop {
 			Dest : ArgT
 		}
+		| Return {
+			Val : ArgT
+		}
 		
 		| Assign {
+			Dest : ArgT;
+			Src : ArgT
+		}
+		| LoadAddr {
+			Dest : ArgT;
+			Src : ArgT
+		}
+		| LoadElem {
+			Size : int;
+			Dest : ArgT;
+			Array : ArgT;
+			Index : ArgT;
+		}
+		| StoreElem {
+			Size : int;
+			Array : ArgT;
+			Index : ArgT;
+			Value : ArgT
+		}
+		| StoreInd {
+			Size : int;
+			Dest : ArgT;
+			Src : ArgT
+		}
+		| Conv {
+			Ovf : bool;
+			Size : int;
 			Dest : ArgT;
 			Src : ArgT
 		}
@@ -59,13 +89,17 @@ namespace Renraku.Compiler {
 			mutable NotTaken : LabelT
 		}
 		
-		| Return {
-			Val : ArgT
-		}
-		
 		public override ToString() : string {
 			match(this) {
 				| Assign(dest, src) => "{0} = {1}" <- (dest, src)
+				| LoadAddr(dest, src) => "{0} = & {1}" <- (dest, src)
+				| LoadElem(size, dest, arr, index) =>
+					"{0} ={1} {2}[{3}]" <- (dest, size, arr, index)
+				| StoreElem(size, arr, index, value) =>
+					"{0}[{1}] ={2} {3}" <- (arr, index, size, value)
+				| StoreInd(size, dest, src) => "*{0} ={1} {2}" <- (dest, size, src)
+				| Conv(ovf, size, dest, src) =>
+					"{0} = {1} :>{2} {3}" <- (dest, src, if(ovf) ".ovf" else "", size)
 				| Push(arg) => "push({0})" <- arg
 				| Pop(arg)  => "{0} = pop()" <- arg
 				| Unary(op, dest, src) =>

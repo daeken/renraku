@@ -67,7 +67,12 @@ namespace Renraku.Compiler {
 				def mapInsts(inst : Inst [CILArg, int]) : Inst [CILArg, CILGraphBody] {
 					| Push(src) => Inst.Push(src)
 					| Pop(dest) => Inst.Pop(dest)
+					| Conv(ovf, size, dest, src) => Inst.Conv(ovf, size, dest, src)
 					| Assign(dest, src) => Inst.Assign(dest, src)
+					| LoadAddr(dest, src) => Inst.LoadAddr(dest, src)
+					| LoadElem(size, dest, arr, index) => Inst.LoadElem(size, dest, arr, index)
+					| StoreElem(size, arr, index, value) => Inst.StoreElem(size, arr, index, value)
+					| StoreInd(size, dest, src) => Inst.StoreInd(size, dest, src)
 					| Unary(op, dest, src) => Inst.Unary(op, dest, src)
 					| Binary(op, ovf, dest, opers) => Inst.Binary(op, ovf, dest, opers)
 					| Branch(cond, unsigned, _, _) => Inst.Branch(cond, unsigned, null, null)
