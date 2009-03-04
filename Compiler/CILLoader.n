@@ -45,6 +45,13 @@ namespace Renraku.Compiler {
 	public module CILLoader {
 		public Load(fn : string) : Assembly [CILBody] {
 			def ParseBody(insts, off, accum : CILBody = []) {
+				def bin(op, ovf=false) {
+					Inst.Binary(op, ovf, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+				}
+				def condBranch(op, inst, un=false) {
+					Inst.Branch((op, CILArg.Stack(), CILArg.Stack()), un, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
+				}
+				
 				if(off == -1) accum
 				else {
 					def inst = insts[off];
@@ -57,8 +64,11 @@ namespace Renraku.Compiler {
 							(
 								inst.Offset, 
 								switch(inst.OpCode) {
+									| Dup => Inst.Push(CILArg.Stack())
+									
 									| Ldarg_0 => Inst.Push(CILArg.Arg(0))
 									
+									| Ldc_I4  => Inst.Push(CILArg.VInt(inst.Operand :> int))
 									| Ldc_I4_S  => Inst.Push(CILArg.VInt((inst.Operand :> sbyte) :> int))
 									| Ldc_I4_M1 => Inst.Push(CILArg.VInt(-1))
 									| Ldc_I4_0  => Inst.Push(CILArg.VInt(0))
@@ -71,38 +81,56 @@ namespace Renraku.Compiler {
 									| Ldc_I4_7  => Inst.Push(CILArg.VInt(7))
 									| Ldc_I4_8  => Inst.Push(CILArg.VInt(8))
 									
-									| Add => Inst.Binary(Op.@+, false, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
-									| Sub => Inst.Binary(Op.@-, false, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
-									| Mul => Inst.Binary(Op.@*, false, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
-									| Add_Ovf => Inst.Binary(Op.@+, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
-									| Sub_Ovf => Inst.Binary(Op.@-, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
-									| Mul_Ovf => Inst.Binary(Op.@*, true, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									| Ldloc_0 => Inst.Push(CILArg.Local(0))
+									| Ldloc_1 => Inst.Push(CILArg.Local(0))
+									| Ldloc_2 => Inst.Push(CILArg.Local(0))
+									| Stloc_0 => Inst.Pop(CILArg.Local(0))
+									| Stloc_1 => Inst.Pop(CILArg.Local(1))
+									| Stloc_2 => Inst.Pop(CILArg.Local(2))
+									| Ldloca_S => Inst.LoadAddr(CILArg.Stack(), CILArg.Local((inst.Operand :> VariableDefinition).Index :> uint))
 									
-									| And => Inst.Binary(Op.@&, false, CILArg.Stack(), (CILArg.Stack(), CILArg.Stack()))
+									| Ldelem_I2 => Inst.LoadElem(2, CILArg.Stack(), CILArg.Stack(), CILArg.Stack())
+									| Stelem_I2 => Inst.StoreElem(2, CILArg.Stack(), CILArg.Stack(), CILArg.Stack())
 									
+									| Stind_I2 => Inst.StoreInd(2, CILArg.Stack(), CILArg.Stack())
+									
+									| Conv_Ovf_U2 => Inst.Conv(true, 2, CILArg.Stack(), CILArg.Stack())
+									| Conv_I => Inst.Conv(false, -1, CILArg.Stack(), CILArg.Stack())
+									| Conv_U => Inst.Conv(false, 0, CILArg.Stack(), CILArg.Stack())
+									
+									| Add     => bin(Op.@+)
+									| Sub     => bin(Op.@-)
+									| Mul     => bin(Op.@*)
+									| Add_Ovf => bin(Op.@+, true)
+									| Sub_Ovf => bin(Op.@-, true)
+									| Mul_Ovf => bin(Op.@*, true)
+									
+									| And => bin(Op.@&)
+									| Or  => bin(Op.@|)
 									| Not => Inst.Unary(Op.@~, CILArg.Stack(), CILArg.Stack())
 									
-
-									| Beq => Inst.Branch((Op.@==, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Beq_S => Inst.Branch((Op.@==, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bge => Inst.Branch((Op.@>=, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bge_S => Inst.Branch((Op.@>=, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bge_Un  => Inst.Branch((Op.@>=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bge_Un_S => Inst.Branch((Op.@>=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bgt => Inst.Branch((Op.@>, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bgt_S => Inst.Branch((Op.@>, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bgt_Un => Inst.Branch((Op.@>, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bgt_Un_S => Inst.Branch((Op.@>, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Ble => Inst.Branch((Op.@<=, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Ble_S => Inst.Branch((Op.@<=, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Ble_Un => Inst.Branch((Op.@<=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Ble_Un_S => Inst.Branch((Op.@<=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Blt => Inst.Branch((Op.@<, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Blt_S => Inst.Branch((Op.@<, CILArg.Stack(), CILArg.Stack()), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Blt_Un => Inst.Branch((Op.@<, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Blt_Un_S => Inst.Branch((Op.@<, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bne_Un => Inst.Branch((Op.@!=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
-									| Bne_Un_S => Inst.Branch((Op.@!=, CILArg.Stack(), CILArg.Stack()), true, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
+									| Ceq => bin(Op.@==)
+									
+									| Beq      => condBranch(Op.@==, inst, false)
+									| Beq_S    => condBranch(Op.@==, inst, false)
+									| Bge      => condBranch(Op.@>=, inst, false)
+									| Bge_S    => condBranch(Op.@>=, inst, false)
+									| Bge_Un   => condBranch(Op.@>=, inst, true )
+									| Bge_Un_S => condBranch(Op.@>=, inst, true )
+									| Bgt      => condBranch(Op.@> , inst, false)
+									| Bgt_S    => condBranch(Op.@> , inst, false)
+									| Bgt_Un   => condBranch(Op.@> , inst, true )
+									| Bgt_Un_S => condBranch(Op.@> , inst, true )
+									| Ble      => condBranch(Op.@<=, inst, false)
+									| Ble_S    => condBranch(Op.@<=, inst, false)
+									| Ble_Un   => condBranch(Op.@<=, inst, true )
+									| Ble_Un_S => condBranch(Op.@<=, inst, true )
+									| Blt      => condBranch(Op.@< , inst, false)
+									| Blt_S    => condBranch(Op.@< , inst, false)
+									| Blt_Un   => condBranch(Op.@< , inst, true )
+									| Blt_Un_S => condBranch(Op.@< , inst, true )
+									| Bne_Un   => condBranch(Op.@!=, inst, true )
+									| Bne_Un_S => condBranch(Op.@!=, inst, true )
 									
 									| Br => Inst.Branch((Op.Nil, CILArg.Stack(), null), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
 									| Br_S => Inst.Branch((Op.Nil, CILArg.Stack(), null), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())

@@ -14,6 +14,16 @@
 		</delete>
 	</target>
 	
+	<target name="Core" description="Build the core" depends="">
+		<ncc target="library" output="Obj/Renraku.Core.dll" debug="${debug}">
+			<sources>
+				<include name="Core/*.n" />
+			</sources>
+			<references>
+			</references>
+		</ncc>
+	</target>
+	
 	<target name="Compiler" description="Build the compiler" depends="">
 		<mkdir dir="Obj/" />
 		<ncc target="exe" output="Obj/Compiler.exe" debug="${debug}">
@@ -27,18 +37,16 @@
 		</ncc>
 	</target>
 	
-	<target name="Test" description="Build the test kernel" depends="Compiler">
-		<!--
-		<ncc target="dll" output="Obj/Test.dll" debug="${debug}">
+	<target name="TestKernel" description="Build the test kernel" depends="Compiler">
+		<csc target="library" output="Obj/TestKernel.dll" debug="${debug}">
 			<sources>
-				<include name="Test/*.n" />
+				<include name="TestKernel/*.cs" />
 			</sources>
 			<references>
 			</references>
-			<arg line="-r ../Nextem/Obj/Nextem.dll -m ../Nextem/Obj/Nextem.Macros.dll" />
-		</ncc>
-		-->
+			<arg line="/unsafe" />
+		</csc>
 	</target>
 	
-	<target name="Build" description="Build Renraku" depends="Compiler, Test" />
+	<target name="Build" description="Build Renraku" depends="Compiler, Core, TestKernel" />
 </project>
