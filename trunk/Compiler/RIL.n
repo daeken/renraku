@@ -29,6 +29,7 @@ namespace Renraku.Compiler {
 	}
 	
 	public variant Inst [ArgT, LabelT] {
+		| Breakpoint { /* XXX: I'm assuming nothing goes here */ }
 		| Push {
 			Src : ArgT
 		}
@@ -112,6 +113,7 @@ namespace Renraku.Compiler {
 					else
 						"branch({0}, {1}, {2})" <- (comp, taken, not)
 				| Return(val) => "return({0})" <- val
+				| Breakpoint => "break"
 			}
 		}
 	}

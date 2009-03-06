@@ -101,6 +101,7 @@ namespace Renraku.Compiler {
 									| Add     => bin(Op.@+)
 									| Sub     => bin(Op.@-)
 									| Mul     => bin(Op.@*)
+									| Div     => bin(Op.@/)
 									| Add_Ovf => bin(Op.@+, true)
 									| Sub_Ovf => bin(Op.@-, true)
 									| Mul_Ovf => bin(Op.@*, true)
@@ -110,6 +111,8 @@ namespace Renraku.Compiler {
 									| Not => Inst.Unary(Op.@~, CILArg.Stack(), CILArg.Stack())
 									
 									| Ceq => bin(Op.@==)
+									| Cgt => bin(Op.@>)
+									| Clt => bin(Op.@<)
 									
 									| Beq      => condBranch(Op.@==, inst, false)
 									| Beq_S    => condBranch(Op.@==, inst, false)
@@ -140,6 +143,7 @@ namespace Renraku.Compiler {
 									| Brtrue_S => Inst.Branch((Op.@!=, CILArg.Stack(), CILArg.VInt(0)), false, (inst.Operand :> Instruction).Offset, inst.Offset+inst.GetSize())
 									
 									| Ret => Inst.Return(CILArg.Stack())
+									| Break => Inst.Breakpoint()
 									
 									| _ =>
 										print "Unhandled opcode: {0} {1}" <- (inst.OpCode, inst.Operand);
