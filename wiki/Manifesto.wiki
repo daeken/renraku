@@ -1,0 +1,16 @@
+#summary Manifesto for the vision of Renraku
+#labels Featured,Phase-Requirements
+
+= Background =
+
+The creation of Renraku was inspired by three primary things:
+  * The antiquated nature of all existing OSes, being built on concepts from the 1960s that are incompatible with the communication-heavy nature of their use
+  * The growing use of parallel computing with no good platform to do this on
+  * A desire to integrate mobile computing platforms with your personal computer and the world at large (which in turn is inspired by the 'decks' of Shadowrun, hence the name of the OS)
+
+The questions I had when thinking about current systems (as a whole):
+  * Why are we still using unsafe code and the separate address spaces it requires?
+  * Why are our files and network connections stream-based (from a programmer perspective) when 99% of it ends up being wrapped into objects, rather than just using network-transparent objects?
+  * Why do we reboot?
+  * Why is it so difficult to extend the functionality of existing programs unless they have an explicit plug-in API?
+  * Why do we still lose data due to power outages, program crashes, etc?
