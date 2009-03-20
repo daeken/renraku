@@ -14,3 +14,12 @@ The questions I had when thinking about current systems (as a whole):
   * Why do we reboot?
   * Why is it so difficult to extend the functionality of existing programs unless they have an explicit plug-in API?
   * Why do we still lose data due to power outages, program crashes, etc?
+
+=Ideas=
+
+  * Make the entire system managed code running in a single address space with a global garbage collector
+  * Everything must be an object
+  * Objects must be completely network transparant and can be written to disk
+  * Data on disk must be orthogonally persistent
+  * All components must be replaceable at runtime so as to never have to reboot
+  * The system must support arbitrary extensions of all running code
